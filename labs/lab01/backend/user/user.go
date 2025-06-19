@@ -2,6 +2,8 @@ package user
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 )
 
 var (
@@ -22,24 +24,64 @@ type User struct {
 
 // NewUser creates a new user with validation
 func NewUser(name string, age int, email string) (*User, error) {
-	// TODO: Implement user creation with validation
-	return nil, nil
+
+	newUser := &User{
+		Name:  name,
+		Age:   age,
+		Email: email,
+	}
+
+	err := newUser.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	return newUser, nil
 }
 
 // Validate checks if the user data is valid
 func (u *User) Validate() error {
-	// TODO: Implement user validation
+	if u.Name == "" {
+		return ErrEmptyName
+	}
+
+	if u.Age < 0 || u.Age > 150 {
+		return ErrInvalidAge
+	}
+
+	if !IsValidEmail(u.Email) {
+		return ErrInvalidEmail
+	}
+
 	return nil
 }
 
 // String returns a string representation of the user
 func (u *User) String() string {
-	// TODO: Implement string representation
-	return ""
+	stringRepresentation := fmt.Sprintf("Name: %s, Age: %d, Email: %s", u.Name, u.Age, u.Email)
+
+	return stringRepresentation
 }
 
 // IsValidEmail checks if the email format is valid
 func IsValidEmail(email string) bool {
-	// TODO: Implement email validation
-	return false
+	if email == "" {
+		return false
+	}
+
+	at := strings.Index(email, "@")
+	if at <= 0 {
+		return false
+	}
+
+	dot := strings.LastIndex(email, ".")
+	if dot <= at+1 {
+		return false
+	}
+
+	if dot >= len(email)-2 {
+		return false
+	}
+
+	return true
 }
