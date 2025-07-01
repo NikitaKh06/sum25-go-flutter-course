@@ -22,15 +22,13 @@ type User struct {
 
 // NewUser creates a new user with validation
 func NewUser(name string, age int, email string) (*User, error) {
-
 	newUser := &User{
 		Name:  name,
 		Age:   age,
 		Email: email,
 	}
 
-	err := newUser.Validate()
-	if err != nil {
+	if err := newUser.Validate(); err != nil {
 		return nil, err
 	}
 
@@ -38,20 +36,7 @@ func NewUser(name string, age int, email string) (*User, error) {
 }
 
 // Validate checks if the user data is valid
-// Validate checks if the user data is valid, returns an error for each invalid field
 func (u *User) Validate() error {
-	if u.Name == "" {
-		return ErrEmptyName
-	}
-
-	if u.Age < 0 || u.Age > 150 {
-		return ErrInvalidAge
-	}
-
-	if !IsValidEmail(u.Email) {
-		return ErrInvalidEmail
-	}
-
 	if !IsValidName(u.Name) {
 		return ErrInvalidName
 	}
@@ -67,21 +52,12 @@ func (u *User) Validate() error {
 	return nil
 }
 
-// String returns a string representation of the user, formatted as "Name: <name>, Age: <age>, Email: <email>"
+// String returns a string representation of the user
 func (u *User) String() string {
-	stringRepresentation := fmt.Sprintf("Name: %s, Age: %d, Email: %s", u.Name, u.Age, u.Email)
-
-	return stringRepresentation
-}
-
-// NewUser creates a new user with validation, returns an error if the user is not valid
-func NewUser(name string, age int, email string) (*User, error) {
-	// TODO: Implement this function
-	return nil, nil
+	return fmt.Sprintf("Name: %s, Age: %d, Email: %s", u.Name, u.Age, u.Email)
 }
 
 // IsValidEmail checks if the email format is valid
-// You can use regexp.MustCompile to compile the email regex
 func IsValidEmail(email string) bool {
 	if email == "" {
 		return false
@@ -97,25 +73,19 @@ func IsValidEmail(email string) bool {
 		return false
 	}
 
-	if dot >= len(email)-2 {
+	if dot >= len(email)-1 {
 		return false
 	}
 
 	return true
 }
 
-	// TODO: Implement this function
-	return false
-}
-
-// IsValidName checks if the name is valid, returns false if the name is empty or longer than 30 characters
+// IsValidName checks if the name is valid
 func IsValidName(name string) bool {
-	// TODO: Implement this function
-	return false
+	return len(name) > 0 && len(name) <= 30
 }
 
-// IsValidAge checks if the age is valid, returns false if the age is not between 0 and 150
+// IsValidAge checks if the age is valid
 func IsValidAge(age int) bool {
-	// TODO: Implement this function
-	return false
+	return age >= 0 && age <= 150
 }

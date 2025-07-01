@@ -31,7 +31,7 @@ func NewTaskManager() *TaskManager {
 	// TODO: Implement task manager initialization
 
 	newTaskManager := TaskManager{
-		tasks:  make(map[int]*Task),
+		tasks:  make(map[int]Task),
 		nextID: 1,
 	}
 
@@ -53,7 +53,7 @@ func (tm *TaskManager) AddTask(title, description string) (*Task, error) {
 		time.Now(),
 	}
 
-	tm.tasks[tm.nextID] = &newTask
+	tm.tasks[tm.nextID] = newTask
 	tm.nextID++
 
 	return &newTask, nil
@@ -61,10 +61,6 @@ func (tm *TaskManager) AddTask(title, description string) (*Task, error) {
 
 // UpdateTask updates an existing task, returns an error if the title is empty or the task is not found
 func (tm *TaskManager) UpdateTask(id int, title, description string, done bool) error {
-
-	if id < 1 {
-		return ErrInvalidID
-	}
 
 	if title == "" {
 		return ErrEmptyTitle
@@ -78,16 +74,13 @@ func (tm *TaskManager) UpdateTask(id int, title, description string, done bool) 
 	task.Title = title
 	task.Description = description
 	task.Done = done
+	tm.tasks[id] = task
 
 	return nil
 }
 
 // DeleteTask removes a task from the manager, returns an error if the task is not found
 func (tm *TaskManager) DeleteTask(id int) error {
-
-	if id < 1 {
-		return ErrInvalidID
-	}
 
 	if _, exists := tm.tasks[id]; !exists {
 		return ErrTaskNotFound
@@ -101,28 +94,28 @@ func (tm *TaskManager) DeleteTask(id int) error {
 // GetTask retrieves a task by ID
 func (tm *TaskManager) GetTask(id int) (*Task, error) {
 
-	if id < 1 {
-		return nil, ErrInvalidID
-	}
-
 	task, exists := tm.tasks[id]
 	if !exists {
 		return nil, ErrTaskNotFound
 	}
 
-	return task, nil
+	return &task, nil
 }
 
 // ListTasks returns all tasks, optionally filtered by done status
 func (tm *TaskManager) ListTasks(filterDone *bool) []*Task {
-
-	allTasks := []*Task{}
-
-	for _, v := range tm.tasks {
-		if filterDone == nil || v.Done == *filterDone {
-			allTasks = append(allTasks, v)
+	var tasks []*Task
+	for id := range tm.tasks {
+		task := tm.tasks[id]
+		if filterDone == nil || task.Done == *filterDone {
+			tasks = append(tasks, &Task{
+				ID:          task.ID,
+				Title:       task.Title,
+				Description: task.Description,
+				Done:        task.Done,
+				CreatedAt:   task.CreatedAt,
+			})
 		}
 	}
-
-	return allTasks
+	return tasks
 }
