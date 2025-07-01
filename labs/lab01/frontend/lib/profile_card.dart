@@ -44,6 +44,7 @@ class ProfileCard extends StatelessWidget {
               'Age: $age',
               style: const TextStyle(fontSize: 16),
             ),
+
             const SizedBox(height: 8),
             Text(
               email,
