@@ -6,13 +6,11 @@ import (
 	"strings"
 )
 
+// Predefined errors
 var (
-	// ErrInvalidEmail is returned when the email format is invalid
+	ErrInvalidName  = errors.New("invalid name: must be between 1 and 30 characters")
+	ErrInvalidAge   = errors.New("invalid age: must be between 0 and 150")
 	ErrInvalidEmail = errors.New("invalid email format")
-	// ErrInvalidAge is returned when the age is invalid
-	ErrInvalidAge = errors.New("invalid age: must be between 0 and 150")
-	// ErrEmptyName is returned when the name is empty
-	ErrEmptyName = errors.New("name cannot be empty")
 )
 
 // User represents a user in the system
@@ -40,6 +38,7 @@ func NewUser(name string, age int, email string) (*User, error) {
 }
 
 // Validate checks if the user data is valid
+// Validate checks if the user data is valid, returns an error for each invalid field
 func (u *User) Validate() error {
 	if u.Name == "" {
 		return ErrEmptyName
@@ -53,17 +52,36 @@ func (u *User) Validate() error {
 		return ErrInvalidEmail
 	}
 
+	if !IsValidName(u.Name) {
+		return ErrInvalidName
+	}
+
+	if !IsValidAge(u.Age) {
+		return ErrInvalidAge
+	}
+
+	if !IsValidEmail(u.Email) {
+		return ErrInvalidEmail
+	}
+
 	return nil
 }
 
-// String returns a string representation of the user
+// String returns a string representation of the user, formatted as "Name: <name>, Age: <age>, Email: <email>"
 func (u *User) String() string {
 	stringRepresentation := fmt.Sprintf("Name: %s, Age: %d, Email: %s", u.Name, u.Age, u.Email)
 
 	return stringRepresentation
 }
 
+// NewUser creates a new user with validation, returns an error if the user is not valid
+func NewUser(name string, age int, email string) (*User, error) {
+	// TODO: Implement this function
+	return nil, nil
+}
+
 // IsValidEmail checks if the email format is valid
+// You can use regexp.MustCompile to compile the email regex
 func IsValidEmail(email string) bool {
 	if email == "" {
 		return false
@@ -84,4 +102,20 @@ func IsValidEmail(email string) bool {
 	}
 
 	return true
+}
+
+	// TODO: Implement this function
+	return false
+}
+
+// IsValidName checks if the name is valid, returns false if the name is empty or longer than 30 characters
+func IsValidName(name string) bool {
+	// TODO: Implement this function
+	return false
+}
+
+// IsValidAge checks if the age is valid, returns false if the age is not between 0 and 150
+func IsValidAge(age int) bool {
+	// TODO: Implement this function
+	return false
 }
