@@ -181,7 +181,6 @@ Lecture 05: **Advanced Patterns**
 - **JWT implementation with proper security measures**
 - **Common security vulnerabilities and prevention**
 - **Production-ready security practices**
-- **Performance and monitoring considerations**
 
 </div>
 
@@ -257,6 +256,8 @@ Advanced Development Patterns
 └─────────────────────┘
 ```
 
+<br/>
+
 **Problems:**
 - Database drives design
 - Business logic depends on data layer
@@ -281,11 +282,101 @@ Advanced Development Patterns
       ↑ Dependencies point inward
 ```
 
+<br/>
+
 **Benefits:**
 - Business rules at center
 - Framework independence
 - Testable in isolation
 - Dependency inversion
+
+</div>
+
+</div>
+
+</div>
+
+---
+
+# Clean architecture layers
+
+<div class="slide-content">
+
+
+<style scoped>
+img {
+  max-height: 570px !important;
+  max-width: 90% !important;
+  object-fit: contain !important;
+  margin: 0 auto !important;
+  display: block !important;
+}
+</style>
+
+![Clean architecture layers](./assets/clean-architecture-layers.png)
+
+</div>
+
+---
+
+<div class="slide-content">
+
+<div class="code-columns">
+<div>
+
+#### Layer first approach
+```
+project/
+├── controllers/
+│   ├── UserController.go
+│   └── CommentController.go
+├── services/
+│   ├── UserService.go
+│   └── CommentService.go
+├── repositories/
+│   ├── UserRepository.go
+│   └── CommentRepository.go
+└── models/
+    ├── User.go
+    └── Comment.go
+```
+
+<br/>
+
+- Clear technical separation
+- Familiar to most developers
+- Changes span multiple directories
+- Hard to understand business features
+
+</div>
+
+<div>
+
+#### Feature first approach
+```
+project/
+├── user/
+│   ├── handler.go
+│   ├── service.go
+│   ├── repository.go
+│   └── model.go
+├── comment/
+│   ├── handler.go
+│   ├── service.go
+│   ├── repository.go
+│   └── model.go
+└── shared/
+    ├── middleware/
+    └── config/
+```
+
+<br/>
+
+- Features are self-contained
+- Easy to understand business domains
+- Better for team organization
+- Easier to extract microservices
+- May duplicate technical concerns
 
 </div>
 
@@ -428,20 +519,15 @@ func (uc *UserUseCase) CreateUser(name, email string) (*User, error) {
     user := &User{Name: name, Email: email}
     if err := user.Validate(); err != nil {
         return nil, err
-    }
-    
-    // Check if user exists
+    } // Check if user exists
     existing, _ := uc.userRepo.FindByEmail(email)
     if existing != nil {
         return nil, errors.New("user already exists")
-    }
-    
-    // Save user
+    } // Save user
     if err := uc.userRepo.Save(user); err != nil {
         uc.logger.Error("Failed to save user", err)
         return nil, err
     }
-    
     return user, nil
 }
 ```
@@ -494,7 +580,6 @@ type postgresUserRepository struct {
 func (r *postgresUserRepository) Save(user *User) error {
     query := `INSERT INTO users (name, email) 
               VALUES ($1, $2) RETURNING id, created_at`
-    
     return r.db.QueryRow(query, user.Name, user.Email).
         Scan(&user.ID, &user.CreatedAt)
 }
@@ -502,11 +587,9 @@ func (r *postgresUserRepository) Save(user *User) error {
 func (r *postgresUserRepository) FindByID(id int) (*User, error) {
     query := `SELECT id, name, email, created_at 
               FROM users WHERE id = $1`
-    
     user := &User{}
     err := r.db.QueryRow(query, id).
         Scan(&user.ID, &user.Name, &user.Email, &user.CreatedAt)
-    
     return user, err
 }
 ```
@@ -521,31 +604,22 @@ func (r *postgresUserRepository) FindByID(id int) (*User, error) {
 type memoryUserRepository struct {
     users map[int]*User
     mutex sync.RWMutex
-    nextID int
-}
-
+    nextID int }
 func (r *memoryUserRepository) Save(user *User) error {
     r.mutex.Lock()
     defer r.mutex.Unlock()
-    
     r.nextID++
     user.ID = r.nextID
     user.CreatedAt = time.Now()
     r.users[user.ID] = user
-    
-    return nil
-}
-
+    return nil }
 func (r *memoryUserRepository) FindByID(id int) (*User, error) {
     r.mutex.RLock()
     defer r.mutex.RUnlock()
-    
     user, exists := r.users[id]
     if !exists {
-        return nil, errors.New("user not found")
-    }
-    return user, nil
-}
+        return nil, errors.New("user not found")} 
+return user, nil}
 ```
 
 </div>
@@ -622,12 +696,10 @@ class User extends Equatable {
 ```dart
 // core/usecases/usecase.dart
 abstract class UseCase<Type, Params> {
-  Future<Either<Failure, Type>> call(Params params);
-}
-
+  Future<Either<Failure, Type>> call(Params params); }
 class NoParams extends Equatable {
   @override
-  List<Object> get props => [];
+  List<Object> get props => []; 
 }
 ```
 
@@ -636,14 +708,12 @@ class NoParams extends Equatable {
 // features/user/domain/usecases/get_user.dart
 class GetUser implements UseCase<User, GetUserParams> {
   final UserRepository repository;
-
   GetUser(this.repository);
 
   @override
   Future<Either<Failure, User>> call(GetUserParams params) async {
-    return await repository.getUser(params.id);
-  }
-}
+    return await repository.getUser(params.id); 
+}}
 ```
 
 </div>
@@ -692,28 +762,20 @@ class UserModel extends User {
   const UserModel({
     required super.id,
     required super.name,
-    required super.email,
     required super.createdAt,
   });
-
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'],
       name: json['name'],
-      email: json['email'],
       createdAt: DateTime.parse(json['created_at']),
-    );
-  }
-
+    );}
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'name': name,
-      'email': email,
       'created_at': createdAt.toIso8601String(),
-    };
-  }
-}
+};}}
 ```
 
 </div>
@@ -727,12 +789,8 @@ class UserRepositoryImpl implements UserRepository {
   final UserRemoteDataSource remoteDataSource;
   final UserLocalDataSource localDataSource;
   final NetworkInfo networkInfo;
-
-  UserRepositoryImpl({
-    required this.remoteDataSource,
-    required this.localDataSource,
-    required this.networkInfo,
-  });
+  UserRepositoryImpl({ required this.remoteDataSource, required 
+    this.localDataSource, required this.networkInfo, });
 
   @override
   Future<Either<Failure, User>> getUser(int id) async {
@@ -741,19 +799,12 @@ class UserRepositoryImpl implements UserRepository {
         final user = await remoteDataSource.getUser(id);
         await localDataSource.cacheUser(user);
         return Right(user);
-      } catch (e) {
-        return Left(ServerFailure());
-      }
+      } catch (e) => return Left(ServerFailure());
     } else {
       try {
         final user = await localDataSource.getUser(id);
         return Right(user);
-      } catch (e) {
-        return Left(CacheFailure());
-      }
-    }
-  }
-}
+      } catch (e) => return Left(CacheFailure()); }}}
 ```
 
 </div>
@@ -770,27 +821,17 @@ class UserRepositoryImpl implements UserRepository {
 
 > **Testing** is crucial for building reliable applications. Different types of tests serve different purposes and provide varying levels of confidence.
 
-#### Testing pyramid
-```
-                    ▲
-                   /|\
-                  / | \
-                 /  |  \
-                / E2E|   \
-               /Tests|    \
-              /______|_____\
-             /              \
-            /  Integration    \
-           /     Tests        \
-          /___________________\
-         /                     \
-        /      Unit Tests       \
-       /_______________________\
-```
+<style scoped>
+img {
+  max-height: 420px !important;
+  max-width: 90% !important;
+  object-fit: contain !important;
+  margin: 0 auto !important;
+  display: block !important;
+}
+</style>
 
-- **Unit Tests**: Fast, isolated, test individual functions
-- **Integration Tests**: Test component interactions
-- **End-to-End Tests**: Test complete user workflows
+![Testing pyramid](./assets/testing-pyramid.png)
 
 </div>
 
@@ -898,7 +939,8 @@ func TestPostgresUserRepository_Save(t *testing.T) {
 ```go
 // test_helpers.go
 func setupTestDB(t *testing.T) *sql.DB {
-    db, err := sql.Open("postgres", "postgres://test:test@localhost/testdb?sslmode=disable")
+    db, err := sql.Open("postgres", 
+      "postgres://test:test@localhost/testdb?sslmode=disable")
     require.NoError(t, err)
     
     // Run migrations
@@ -909,7 +951,8 @@ func setupTestDB(t *testing.T) *sql.DB {
 }
 
 func cleanupTestDB(t *testing.T, db *sql.DB) {
-    _, err := db.Exec("TRUNCATE users, posts RESTART IDENTITY CASCADE")
+    _, err := db.Exec(
+      "TRUNCATE users, posts RESTART IDENTITY CASCADE")
     require.NoError(t, err)
     db.Close()
 }
@@ -937,7 +980,8 @@ void main() {
   group('User', () {
     test('should be a subclass of Equatable', () {
       // arrange
-      const user = User(id: 1, name: 'Test', email: 'test@test.com', createdAt: DateTime(2025));
+      const user = User(id: 1, name: 'Test',
+        email: 'test@test.com', createdAt: DateTime(2025));
       
       // assert
       expect(user, isA<Equatable>());
@@ -945,7 +989,8 @@ void main() {
 
     test('should return correct props', () {
       // arrange
-      const user = User(id: 1, name: 'Test', email: 'test@test.com', createdAt: DateTime(2025));
+      const user = User(id: 1, name: 'Test', 
+        email: 'test@test.com', createdAt: DateTime(2025));
       
       // assert
       expect(user.props, [1, 'Test', 'test@test.com', DateTime(2025)]);
@@ -972,7 +1017,8 @@ void main() {
 
   test('should get user from repository', () async {
     // arrange
-    const testUser = User(id: 1, name: 'Test', email: 'test@test.com', createdAt: DateTime(2025));
+    const testUser = User(id: 1, name: 'Test', 
+      email: 'test@test.com', createdAt: DateTime(2025));
     when(mockRepository.getUser(any)).thenAnswer((_) async => const Right(testUser));
 
     // act
@@ -1013,7 +1059,6 @@ void main() {
       email: 'john@example.com',
       createdAt: DateTime(2025),
     );
-
     // act
     await tester.pumpWidget(
       MaterialApp(
@@ -1022,11 +1067,84 @@ void main() {
         ),
       ),
     );
-
     // assert
     expect(find.text('John Doe'), findsOneWidget);
     expect(find.text('john@example.com'), findsOneWidget);
+});}
+```
+
+</div>
+
+<div>
+
+#### Testing with Provider
+```dart
+// test/features/user/presentation/providers/user_provider_test.dart
+void main() {
+  late UserProvider provider;
+  late MockGetUser mockGetUser;
+
+  setUp(() {
+    mockGetUser = MockGetUser();
+    provider = UserProvider(getUser: mockGetUser);
   });
+
+  test('should handle loading and success states', () async {
+    // arrange
+    const testUser = User(id: 1, name: 'Test', email: 'test@test.com');
+    when(mockGetUser(any)).thenAnswer((_) async => const Right(testUser));
+
+    // act & assert
+    final future = provider.getUser(1);
+    expect(provider.isLoading, true);
+    
+    await future;
+    expect(provider.isLoading, false);
+    expect(provider.user, testUser);
+  });
+}
+```
+
+</div>
+
+</div>
+
+</div>
+
+---
+
+# Integration testing
+
+<div class="slide-content">
+
+<div class="code-columns">
+<div>
+
+#### Go integration tests
+```go
+// integration_test.go
+func TestUserAPI_Integration(t *testing.T) {
+    // Setup test database
+    db := setupTestDB(t)
+    defer cleanupTestDB(t, db)
+    // Setup test server
+    server := setupTestServer(db)
+    defer server.Close()
+    // Test user creation flow
+    user := CreateUserRequest{
+        Name:     "Integration Test User",
+        Email:    "integration@test.com",
+        Password: "password123",
+    }
+    // Create user
+    resp := createUser(t, server.URL, user)
+    assert.Equal(t, 201, resp.StatusCode)
+    // Verify user exists in database
+    var dbUser User
+    err := db.QueryRow("SELECT id, name, email FROM users WHERE email = $1", 
+                       user.Email).Scan(&dbUser.ID, &dbUser.Name, &dbUser.Email)
+    assert.NoError(t, err)
+    assert.Equal(t, user.Name, dbUser.Name)
 }
 ```
 
@@ -1034,36 +1152,276 @@ void main() {
 
 <div>
 
-#### Testing with BLoC
+#### Integration test helpers
+```go
+// test_helpers.go
+func setupTestServer(db *sql.DB) *httptest.Server {
+    userRepo := repository.NewPostgresUserRepository(db)
+    userUseCase := usecase.NewUserUseCase(userRepo, logger)
+    userHandler := handler.NewUserHandler(userUseCase)
+    
+    router := mux.NewRouter()
+    router.HandleFunc("/api/users", userHandler.CreateUser).Methods("POST")
+    router.HandleFunc("/api/users/{id}", userHandler.GetUser).Methods("GET")
+    
+    return httptest.NewServer(router)
+}
+
+func createUser(t *testing.T, baseURL string, user CreateUserRequest) 
+                *http.Response {
+    jsonData, _ := json.Marshal(user)
+    resp, err := http.Post(baseURL+"/api/users", 
+                          "application/json", 
+                          bytes.NewBuffer(jsonData))
+    require.NoError(t, err)
+    return resp
+}
+```
+
+</div>
+
+</div>
+
+</div>
+
+---
+
+# End-to-End testing
+
+<div class="slide-content">
+
+<div class="code-columns">
+<div>
+
+#### Flutter E2E with integration_test
 ```dart
-// test/features/user/presentation/bloc/user_bloc_test.dart
+// integration_test/app_test.dart
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:myapp/main.dart' as app;
+
 void main() {
-  late UserBloc bloc;
-  late MockGetUser mockGetUser;
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  group('User Flow E2E', () {
+    testWidgets('complete user registration and login flow', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+      // Test registration
+      await tester.tap(find.text('Sign Up'));
+      await tester.pumpAndSettle();
 
-  setUp(() {
-    mockGetUser = MockGetUser();
-    bloc = UserBloc(getUser: mockGetUser);
-  });
+      await tester.enterText(find.byKey(Key('name_field')), 'Test User');
+      await tester.enterText(find.byKey(Key('email_field')), 'test@example.com');
+      await tester.enterText(find.byKey(Key('password_field')), 'password123');
 
-  group('GetUserEvent', () {
-    test('should emit [Loading, Loaded] when data is gotten successfully', () {
-      // arrange
-      when(mockGetUser(any)).thenAnswer((_) async => const Right(testUser));
+      await tester.tap(find.text('Register'));
+      await tester.pumpAndSettle();
+      // Verify success message
+      expect(find.text('Registration successful'), findsOneWidget);
+});});}
+```
 
-      // assert later
-      final expected = [
-        UserLoading(),
-        const UserLoaded(user: testUser),
-      ];
-      expectLater(bloc.stream, emitsInOrder(expected));
+</div>
 
-      // act
-      bloc.add(const GetUserEvent(id: 1));
+<div>
+
+#### E2E test configuration
+```yaml
+# pubspec.yaml
+dev_dependencies:
+  integration_test:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter
+```
+
+```bash
+# Run E2E tests
+flutter test integration_test/
+# Run on specific device
+flutter test integration_test/ -d <device_id>
+# Generate performance metrics
+flutter test integration_test/ --enable-experiment=native-assets
+```
+
+<br/>
+
+- Encapsulate UI interactions
+- Isolated test environments
+- Network Mocking
+
+</div>
+
+</div>
+
+</div>
+
+---
+
+# Golden tests (Widget snapshots)
+
+<div class="slide-content">
+
+#### Flutter golden tests
+
+<div class="code-columns">
+<div>
+
+```dart
+// test/widgets/user_card_golden_test.dart
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:myapp/widgets/user_card.dart';
+
+void main() {
+  group('UserCard Golden Tests', () {
+    testWidgets('renders correctly with user data', (tester) async {
+      const user = User(
+        id: 1,
+        name: 'John Doe',
+        email: 'john@example.com',
+        createdAt: DateTime(2025, 1, 1),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: UserCard(user: user),
+          ),
+        ),
+      );
+```
+
+</div>
+
+<div>
+
+```dart
+      await expectLater(
+        find.byType(UserCard),
+        matchesGoldenFile('user_card_default.png'),
+      );
+    });
+
+    testWidgets('renders correctly in dark theme', (tester) async {
+      // Test with dark theme
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData.dark(),
+          home: Scaffold(body: UserCard(user: user)),
+        ),
+      );
+
+      await expectLater(
+        find.byType(UserCard),
+        matchesGoldenFile('user_card_dark.png'),
+      );
     });
   });
 }
 ```
+
+</div>
+
+</div>
+
+</div>
+
+---
+
+# Golden tests (continued)
+
+<div class="slide-content">
+
+<div class="code-columns">
+<div>
+
+#### Golden test management
+```bash
+# Generate golden files
+flutter test --update-goldens
+
+# Run golden tests
+flutter test test/widgets/
+
+# Compare with different font scaling
+flutter test --update-goldens --dart-define=FLUTTER_TEST_FONT_SCALE=1.5
+```
+
+#### When to use golden tests
+- **UI component libraries**
+- **Design system validation**
+- **Cross-platform consistency**
+- **Responsive layout testing**
+
+</div>
+
+<div>
+
+#### Golden test best practices
+```dart
+// test/test_utils.dart
+Widget wrapWithMaterialApp(Widget child) {
+  return MaterialApp(
+    theme: ThemeData(
+      fontFamily: 'Roboto', // Consistent fonts
+      textTheme: Typography.blackMountainView,
+    ),
+    home: Scaffold(body: child),
+  );
+}
+
+// Custom golden matcher for specific sizes
+Matcher matchesGoldenFileWithSize(String fileName, Size size) {
+  return MatchesGoldenFile.forStringPath(
+    fileName,
+    version: 1,
+  );
+}
+```
+
+</div>
+
+</div>
+
+</div>
+
+---
+
+# Test types comparison
+
+<div class="slide-content">
+
+| Test Type | Speed | Reliability | Cost | Coverage | When to Use |
+|-----------|-------|-------------|------|----------|-------------|
+| **Unit** | ⚡⚡⚡ | ⭐⭐⭐ | 💰 | Function/Method | Always |
+| **Widget** | ⚡⚡ | ⭐⭐⭐ | 💰💰 | UI Components | UI-heavy apps |
+| **Integration** | ⚡ | ⭐⭐ | 💰💰💰 | Feature flows | Critical paths |
+| **Golden** | ⚡⚡ | ⭐⭐ | 💰💰 | Visual appearance | Design systems |
+| **E2E** | 🐌 | ⭐ | 💰💰💰💰 | Full user journeys | Key user flows |
+
+#### Testing strategy recommendations
+
+<div class="code-columns">
+<div>
+
+**Small projects:**
+- 70% Unit tests
+- 20% Widget tests
+- 10% Integration tests
+- Golden tests for key components
+
+</div>
+
+<div>
+
+**Large projects:**
+- 60% Unit tests
+- 25% Integration tests
+- 10% Widget tests
+- 3% E2E tests
+- 2% Golden tests
 
 </div>
 
@@ -1136,11 +1494,6 @@ open coverage/html/index.html
 
 > **JWT (JSON Web Tokens)** provide a stateless way to handle authentication and authorization in distributed systems.
 
-#### JWT structure
-```
-Header.Payload.Signature
-```
-
 #### Components
 - **Header**: Algorithm and token type
 - **Payload**: Claims (user data, permissions)
@@ -1171,17 +1524,18 @@ type JWTService struct {
     issuer    string
     expiry    time.Duration
 }
-
-func (j *JWTService) GenerateToken(userID int, email string) (string, error) {
-    claims := jwt.MapClaims{
+func (j *JWTService) GenerateToken(userID int, email string) 
+                                  (string, error) {
+    claims := jwt.MapClaims{  // 1. Create claims
         "user_id": userID,
         "email":   email,
         "iss":     j.issuer,
         "exp":     time.Now().Add(j.expiry).Unix(),
         "iat":     time.Now().Unix(),
     }
-    
+    // 2. Create token
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    // 3. Sign token
     return token.SignedString([]byte(j.secretKey))
 }
 ```
@@ -1193,7 +1547,8 @@ func (j *JWTService) GenerateToken(userID int, email string) (string, error) {
 #### Token validation
 ```go
 func (j *JWTService) ValidateToken(tokenString string) (*Claims, error) {
-    token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+    token, err := jwt.Parse(tokenString, 
+                func(token *jwt.Token) (interface{}, error) {
         if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
             return nil, fmt.Errorf("unexpected signing method")
         }
@@ -1239,7 +1594,8 @@ func JWTAuthMiddleware(jwtService *JWTService) func(http.Handler) http.Handler {
         return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
             authHeader := r.Header.Get("Authorization")
             if authHeader == "" {
-                http.Error(w, "Authorization header required", http.StatusUnauthorized)
+                http.Error(w, "Authorization header required", 
+                  http.StatusUnauthorized)
                 return
             }
             
@@ -1273,7 +1629,8 @@ func GetUserProfile(w http.ResponseWriter, r *http.Request) {
     
     user, err := userService.GetUser(claims.UserID)
     if err != nil {
-        http.Error(w, "User not found", http.StatusNotFound)
+        http.Error(w, "User not found", 
+          http.StatusNotFound)
         return
     }
     
@@ -1281,7 +1638,8 @@ func GetUserProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 // Apply middleware
-r.Handle("/api/profile", JWTAuthMiddleware(jwtService)(http.HandlerFunc(GetUserProfile)))
+r.Handle("/api/profile", JWTAuthMiddleware(jwtService)
+  (http.HandlerFunc(GetUserProfile)))
 ```
 
 </div>
@@ -1368,7 +1726,7 @@ class AuthInterceptor extends Interceptor {
 
 ---
 
-# Part IV: Security Best Practices
+# Part IV: Security best practices
 
 <div class="slide-content">
 
@@ -1534,17 +1892,15 @@ func setupTLSServer() *http.Server {
         IdleTimeout:  60 * time.Second,
         TLSConfig: &tls.Config{
             MinVersion:         tls.VersionTLS12,
-            CurvePreferences:   []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
+            CurvePreferences:   []tls.CurveID{
+              tls.CurveP521, tls.CurveP384, tls.CurveP256,},
             PreferServerCiphers: true,
             CipherSuites: []uint16{
                 tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
                 tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
                 tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
             },
-        },
-    }
-    return server
-}
+    },} return server }
 ```
 
 </div>
@@ -1557,7 +1913,8 @@ func setupTLSServer() *http.Server {
 func SecurityHeadersMiddleware(next http.Handler) http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
         // HTTPS enforcement
-        w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+        w.Header().Set("Strict-Transport-Security", 
+          "max-age=31536000; includeSubDomains")
         
         // XSS Protection
         w.Header().Set("X-Content-Type-Options", "nosniff")
@@ -1595,7 +1952,8 @@ class CertificatePinner {
     final dio = Dio();
     
     // Add certificate pinning
-    (dio.httpClientAdapter as DefaultHttpClientAdapter).onHttpClientCreate = (client) {
+    (dio.httpClientAdapter as DefaultHttpClientAdapter).
+    onHttpClientCreate = (client) {
       client.badCertificateCallback = (cert, host, port) {
         // Verify certificate fingerprint
         final fingerprint = sha256.convert(cert.der).toString();
@@ -1641,36 +1999,6 @@ class DataProtection {
 </div>
 
 </div>
-
-</div>
-
----
-
-# Security checklist
-
-<div class="slide-content">
-
-#### Backend Security ✅
-- [ ] **Input validation** on all endpoints
-- [ ] **SQL injection** prevention with prepared statements
-- [ ] **Authentication** with secure JWT implementation
-- [ ] **Rate limiting** on sensitive endpoints
-- [ ] **HTTPS** with proper TLS configuration
-- [ ] **Security headers** (HSTS, CSP, X-Frame-Options)
-- [ ] **Password hashing** with bcrypt or similar
-- [ ] **Environment variables** for secrets
-- [ ] **Dependency scanning** for vulnerabilities
-- [ ] **Error handling** without information leakage
-
-#### Frontend Security ✅
-- [ ] **Certificate pinning** for API connections
-- [ ] **Secure storage** for sensitive data
-- [ ] **Input sanitization** for user inputs
-- [ ] **Token management** with automatic refresh
-- [ ] **Deep link validation** and authorization
-- [ ] **Biometric authentication** where appropriate
-- [ ] **App transport security** configuration
-- [ ] **Code obfuscation** for production builds
 
 </div>
 
@@ -1722,21 +2050,20 @@ class DataProtection {
 <div class="slide-content">
 
 **What's Next:**
-- Lab 05: Implement clean architecture with comprehensive testing and security
+- Lab 05: Apply advanced patterns 
 
 **Resources:**
 - Clean Architecture: https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html
 - Go Testing: https://pkg.go.dev/testing
 - Flutter Testing: https://docs.flutter.dev/testing
-- JWT Best Practices: https://auth0.com/blog/a-look-at-the-latest-draft-for-jwt-bcp/
 - OWASP Top 10: https://owasp.org/www-project-top-ten/
 - Course Repository: https://github.com/timur-harin/sum25-go-flutter-course
+
+<br/>
 
 **Contact:**
 - Email: timur.harin@mail.com
 - Telegram: @timur_harin
-
-**Next Lecture:** Deployment & DevOps
 
 ## Questions?
 
