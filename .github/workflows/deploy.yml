@@ -2,7 +2,7 @@ name: Deploy Flutter Web to GitHub Pages
 
 on:
   push:
-    branches: [lab07-khripunkov-nikita]
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
@@ -18,6 +18,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: '3.19.0'
           cache: true
 
       - name: Install dependencies
@@ -25,10 +26,14 @@ jobs:
         working-directory: labs/lab07/frontend
 
       - name: Build web
-        run: flutter build web --release --web-renderer html
+        run: flutter build web --release
         working-directory: labs/lab07/frontend
         env:
           CI: true
+
+      - name: Create .nojekyll
+        run: touch .nojekyll
+        working-directory: labs/lab07/frontend/build/web
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
