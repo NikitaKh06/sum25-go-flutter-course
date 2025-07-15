@@ -26,7 +26,7 @@ jobs:
         working-directory: labs/lab07/frontend
 
       - name: Build web
-        run: flutter build web --release
+        run: flutter build web --release --base-href "/flutter_hello/"
         working-directory: labs/lab07/frontend
         env:
           CI: true
